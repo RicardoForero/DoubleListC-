@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstddef>   // size_t
-#include <utility>   // std::move
+#include <cstddef>
+#include <utility>
 #include <iostream>
 
 template <typename T>
@@ -24,9 +24,6 @@ private:
     std::size_t listSize = 0;
 
 public:
-    // =========================
-    // Constructors / Destructor
-    // =========================
 
     DoubleList() noexcept = default;
 
@@ -34,7 +31,6 @@ public:
         clear();
     }
 
-    // Copy constructor (deep copy)
     DoubleList(const DoubleList& other) {
         Node* current = other.head;
         while (current) {
@@ -43,14 +39,12 @@ public:
         }
     }
 
-    // Move constructor
     DoubleList(DoubleList&& other) noexcept
         : head(other.head), tail(other.tail), listSize(other.listSize) {
         other.head = other.tail = nullptr;
         other.listSize = 0;
     }
 
-    // Copy assignment
     DoubleList& operator=(const DoubleList& other) {
         if (this == &other) return *this;
 
@@ -63,7 +57,6 @@ public:
         return *this;
     }
 
-    // Move assignment
     DoubleList& operator=(DoubleList&& other) noexcept {
         if (this == &other) return *this;
 
@@ -78,10 +71,6 @@ public:
         return *this;
     }
 
-    // =========================
-    // Capacity
-    // =========================
-
     [[nodiscard]] bool isEmpty() const noexcept {
         return head == nullptr;
     }
@@ -89,10 +78,6 @@ public:
     [[nodiscard]] std::size_t size() const noexcept {
         return listSize;
     }
-
-    // =========================
-    // Modifiers
-    // =========================
 
     void pushBack(const T& value) {
         Node* newNode = new Node(value);
@@ -206,10 +191,6 @@ public:
         return false;
     }
 
-    // =========================
-    // Lookup
-    // =========================
-
     [[nodiscard]] bool contains(const T& value) const {
         Node* current = head;
 
@@ -220,10 +201,6 @@ public:
 
         return false;
     }
-
-    // =========================
-    // Debug / Output
-    // =========================
 
     void displayForward() const {
         Node* current = head;
