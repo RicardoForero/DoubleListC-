@@ -1,62 +1,130 @@
-#ifndef DOUBLELIST_H
-#define DOUBLELIST_H
+#pragma once
 
+#include <cstddef>   // size_t
+#include <utility>   // std::move
 #include <iostream>
-#include <stdexcept>
 
-/**
- * @brief Node structure for a Doubly Linked List.
- * Contains data and pointers to the adjacent nodes.
- */
-template <typename T>
-struct Node {
-    T data;
-    Node* next;
-    Node* prev;
-
-    Node(T value) : data(value), next(nullptr), prev(nullptr) {}
-};
-
-/**
- * @brief Doubly Linked List class with head and tail pointers.
- */
 template <typename T>
 class DoubleList {
 private:
-    Node<T>* head;
-    Node<T>* tail;
-    size_t listSize;
+    struct Node {
+        T data;
+        Node* next;
+        Node* prev;
+
+        explicit Node(const T& value)
+            : data(value), next(nullptr), prev(nullptr) {}
+
+        explicit Node(T&& value)
+            : data(std::move(value)), next(nullptr), prev(nullptr) {}
+    };
+
+    Node* head = nullptr;
+    Node* tail = nullptr;
+    std::size_t listSize = 0;
 
 public:
-    DoubleList() : head(nullptr), tail(nullptr), listSize(0) {}
+    // =========================
+    // Constructors / Destructor
+    // =========================
 
-    // Destructor to prevent memory leaks (O(n) complexity)
+    DoubleList() noexcept = default;
+
     ~DoubleList() {
         clear();
     }
 
-    /**
-     * @brief Inserts an element at the end of the list (Append).
-     * Complexity: O(1)
-     */
-    void pushBack(T value) {
-        Node<T>* newNode = new Node<T>(value);
+    // Copy constructor (deep copy)
+    DoubleList(const DoubleList& other) {
+        Node* current = other.head;
+        while (current) {
+            pushBack(current->data);
+            current = current->next;
+        }
+    }
+
+    // Move constructor
+    DoubleList(DoubleList&& other) noexcept
+        : head(other.head), tail(other.tail), listSize(other.listSize) {
+        other.head = other.tail = nullptr;
+        other.listSize = 0;
+    }
+
+    // Copy assignment
+    DoubleList& operator=(const DoubleList& other) {
+        if (this == &other) return *this;
+
+        clear();
+        Node* current = other.head;
+        while (current) {
+            pushBack(current->data);
+            current = current->next;
+        }
+        return *this;
+    }
+
+    // Move assignment
+    DoubleList& operator=(DoubleList&& other) noexcept {
+        if (this == &other) return *this;
+
+        clear();
+        head = other.head;
+        tail = other.tail;
+        listSize = other.listSize;
+
+        other.head = other.tail = nullptr;
+        other.listSize = 0;
+
+        return *this;
+    }
+
+    // =========================
+    // Capacity
+    // =========================
+
+    [[nodiscard]] bool isEmpty() const noexcept {
+        return head == nullptr;
+    }
+
+    [[nodiscard]] std::size_t size() const noexcept {
+        return listSize;
+    }
+
+    // =========================
+    // Modifiers
+    // =========================
+
+    void pushBack(const T& value) {
+        Node* newNode = new Node(value);
+
         if (isEmpty()) {
             head = tail = newNode;
         } else {
-            newNode->prev = tail;
             tail->next = newNode;
+            newNode->prev = tail;
             tail = newNode;
         }
-        listSize++;
+
+        ++listSize;
     }
 
-    /**
-     * @brief Inserts an element at the beginning of the list (Prepend).
-     * Complexity: O(1)
-     */
-    void pushFront(T value) {
-        Node<T>* newNode = new Node<T>(value);
+    void pushBack(T&& value) {
+        Node* newNode = new Node(std::move(value));
+
+        if (isEmpty()) {
+            head = tail = newNode;
+        } else {
+            tail->next = newNode;
+            newNode->prev = tail;
+            tail = newNode;
+        }
+
+        ++listSize;
+    }
+
+    void pushFront(const T& value) {
+        Node* newNode = new Node(value);
+
         if (isEmpty()) {
             head = tail = newNode;
         } else {
@@ -64,114 +132,118 @@ public:
             head->prev = newNode;
             head = newNode;
         }
-        listSize++;
+
+        ++listSize;
     }
 
-    /**
-     * @brief Traverses the list from Head to Tail.
-     */
-    void displayForward() const {
-        Node<T>* current = head;
-        while (current) {
-            std::cout << current->data << " <-> ";
-            current = current->next;
-        }
-        std::cout << "nullptr" << std::endl;
-    }
-
-    /**
-     * @brief Traverses the list from Tail to Head.
-     */
-    void displayBackward() const {
-        Node<T>* current = tail;
-        while (current) {
-            std::cout << current->data << " <-> ";
-            current = current->prev;
-        }
-        std::cout << "nullptr" << std::endl;
-    }
-
-    bool isEmpty() const { return head == nullptr; }
-    size_t size() const { return listSize; }
-
-    void clear() {
-        Node<T>* current = head;
-        while (current) {
-            Node<T>* nextNode = current->next;
-            delete current;
-            current = nextNode;
-        }
-        head = tail = nullptr;
-        listSize = 0;
-    }
-    /**
-     * @brief Removes the last element.
-     * Complexity: O(1)
-     */
-    void popBack() {
+    void popBack() noexcept {
         if (isEmpty()) return;
-        
-        Node<T>* temp = tail;
-        if (head == tail) { // Solo hay un elemento
+
+        Node* temp = tail;
+
+        if (head == tail) {
             head = tail = nullptr;
         } else {
             tail = tail->prev;
             tail->next = nullptr;
         }
+
         delete temp;
-        listSize--;
+        --listSize;
     }
 
-    /**
-     * @brief Removes the first element.
-     * Complexity: O(1)
-     */
-    void popFront() {
+    void popFront() noexcept {
         if (isEmpty()) return;
 
-        Node<T>* temp = head;
+        Node* temp = head;
+
         if (head == tail) {
             head = tail = nullptr;
         } else {
             head = head->next;
             head->prev = nullptr;
         }
+
         delete temp;
-        listSize--;
+        --listSize;
     }
 
-    void remove(const T& value) {
-    Node<T>* current = head;
-    while (current) {
-        if (current->data == value) {
-            // Update the previous node's next pointer
-            if (current->prev) {
-                current->prev->next = current->next;
-            } else {
-                head = current->next; // It was the head
-            }
+    void clear() noexcept {
+        Node* current = head;
 
-            // Update the next node's previous pointer
-            if (current->next) {
-                current->next->prev = current->prev;
-            } else {
-                tail = current->prev; // It was the tail
-            }
-
+        while (current) {
+            Node* next = current->next;
             delete current;
-            listSize--;
-            return; // Exit after first match
+            current = next;
         }
-        current = current->next;
+
+        head = tail = nullptr;
+        listSize = 0;
     }
+
+    bool remove(const T& value) {
+        Node* current = head;
+
+        while (current) {
+            if (current->data == value) {
+
+                if (current->prev)
+                    current->prev->next = current->next;
+                else
+                    head = current->next;
+
+                if (current->next)
+                    current->next->prev = current->prev;
+                else
+                    tail = current->prev;
+
+                delete current;
+                --listSize;
+                return true;
+            }
+            current = current->next;
+        }
+        return false;
     }
-    bool contains(const T& value) const {
-    Node<T>* current = head;
-    while (current) {
-        if (current->data == value) return true;
-        current = current->next;
+
+    // =========================
+    // Lookup
+    // =========================
+
+    [[nodiscard]] bool contains(const T& value) const {
+        Node* current = head;
+
+        while (current) {
+            if (current->data == value) return true;
+            current = current->next;
+        }
+
+        return false;
     }
-    return false;
-}
+
+    // =========================
+    // Debug / Output
+    // =========================
+
+    void displayForward() const {
+        Node* current = head;
+
+        while (current) {
+            std::cout << current->data << " <-> ";
+            current = current->next;
+        }
+
+        std::cout << "nullptr\n";
+    }
+
+    void displayBackward() const {
+        Node* current = tail;
+
+        while (current) {
+            std::cout << current->data << " <-> ";
+            current = current->prev;
+        }
+
+        std::cout << "nullptr\n";
+    }
 };
-#endif
